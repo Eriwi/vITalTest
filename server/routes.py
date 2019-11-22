@@ -2,6 +2,7 @@ from flask import render_template, jsonify, request, make_response
 from server import app
 from server import db
 from server.models import Patient, Staff, BlacklistToken
+import random
 
 
 @app.route('/')
@@ -139,6 +140,50 @@ def logout():
             'message': 'Invalid token'
         }
         return make_response(jsonify(response)), 403
+
+#expected data format {"PatientPID": "XXXXXXXX-XXXX"} returns data as a json object. Do not forget to include
+#Authorization header with the logged in users token!
+@app.route('/api/philips_mock')
+def philips():
+    auth_header = request.headers.get('Authorization')
+    if auth_header:
+        auth_token = auth_header.split(" ")[0]
+    else:
+        auth_token = ""
+    if auth_token:
+        resp = Staff.decode_token(auth_token)
+        if isinstance(resp, int):
+            patient_pid = request.get_json()['PatientPID']
+            patient = Patient.query.filter_by(Personnummer=patient_pid)
+            if patient:
+                systolic_bp = 130 + random.randrange(-40, 41)
+                diastolic_bp = systolic_bp - 40 + random.randrange(-5, 5)
+                response = {
+                    'status': 'success',
+                    'data': {'systolic_bp': systolic_bp,
+                             'diastolic_bp': diastolic_bp,
+                             'breathing_rate': 12 + random.randrange(-5, 5)
+                             }
+                }
+                return make_response(jsonify(response)), 200
+            else:
+                response = {
+                    'status':'fail',
+                    'message': 'add a PatientPID data entrance as json in body'
+                }
+                return make_response(jsonify(response))
+        else:
+            response = {
+                'status': 'fail',
+                'message': resp
+            }
+            return make_response(jsonify(response)), 401
+    else:
+        response = {
+            'status': 'fail',
+            'message': 'provide an auth token in Authorization header'
+        }
+        return make_response(jsonify(response)), 401
 
 
 @app.route('/patient_list', methods=['GET'])
