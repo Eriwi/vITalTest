@@ -143,7 +143,7 @@ def logout():
 
 #expected data format {"PatientPID": "XXXXXXXX-XXXX"} returns data as a json object. Do not forget to include
 #Authorization header with the logged in users token!
-@app.route('/api/philips_mock')
+@app.route('/api/philips_mock', methods=['POST'])
 def philips():
     auth_header = request.headers.get('Authorization')
     if auth_header:
@@ -162,7 +162,8 @@ def philips():
                     'status': 'success',
                     'data': {'systolic_bp': systolic_bp,
                              'diastolic_bp': diastolic_bp,
-                             'breathing_rate': 12 + random.randrange(-5, 5)
+                             'breathing_rate': 12 + random.randrange(-5, 5),
+                             'oxygen_saturation': 100 - random.randint(0, 11)
                              }
                 }
                 return make_response(jsonify(response)), 200
